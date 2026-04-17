@@ -9,44 +9,21 @@
 
 Traditional AutoML systems rely on sequential or brute-force model selection, offering limited transparency into why a particular model is chosen. This lack of interpretability makes it difficult for practitioners to trust or validate model decisions. Additionally, users often need to manually upload datasets, experiment with multiple models, and compare performance metrics, which is time-consuming and error-prone. There is a need for an intelligent, automated system that not only evaluates multiple models but also provides transparent, data-driven reasoning behind model selection.
 
-The **AutoML Debate System** addresses these challenges by providing an end-to-end pipeline for tabular datasets. It performs **EDA**, trains **three competing models** in parallel (Random Forest, XGBoost, and a linear baseline—Logistic Regression or Ridge), evaluates them on a holdout split, hosts a **metric-grounded debate**, and empowers a **judge agent** to pick the most robust model. The system features a **React** UI and **FastAPI** backend, orchestrated with **LangGraph**. **Chroma** powers two memory layers: run-scoped snippets (EDA, debate) and cross-run dataset–outcome patterns, used as priors for hyperparameter proposals. Training steps employ **LangChain `StructuredTool`** wrappers around real `sklearn` / **XGBoost** fit and evaluation code.
+The **AutoML Debate System** addresses these challenges by providing an end-to-end pipeline for tabular datasets. It performs **EDA**, trains **three competing models** in parallel (Random Forest, XGBoost, and a linear baseline—Logistic Regression or Ridge), evaluates them on a holdout split, hosts a **metric-grounded debate**, and empowers a **judge agent** to pick the most robust model. The system features a **React** UI and **FastAPI** backend, orchestrated with **LangGraph**. **Memory** remembers notes from the current run and patterns from past runs (see [Memory](#memory)). Training steps employ **LangChain `StructuredTool`** wrappers around real `sklearn` / **XGBoost** fit and evaluation code.
 
 The UI is built with **React + Vite**, styled using **Tailwind CSS** and utilizes **Axios** for API interactions.
 
 **Step-by-step run commands (backend, frontend, and curl):** see **[HOW_TO_RUN.md](./HOW_TO_RUN.md)**.
 
-**Layout:** Application code lives under `**src/`** (`src/backend` for FastAPI, `src/frontend` for Vite). The repository root also holds `**README.md**`, `**HOW_TO_RUN.md**`, `**requirements.txt**`, and a `**tests/**` folder with sample CSVs and `**[tests/AboutDataset.md](./tests/AboutDataset.md)**` (see **Sample datasets** under [Input and output samples](#input-and-output-samples)). Always `**cd`** into `src/backend` or `src/frontend` from the **repository root** before the commands below — not from an old `backend/` or top-level `frontend/` path.
-
 ---
 
-## Architecture (high level)
+## High Level Architecture 
 
-```mermaid
-flowchart LR
-  subgraph api [FastAPI]
-    A1["POST /automl-debate"]
-    A2["POST /api/v1/debate"]
-    A3["GET /api/v1/debate/{run_id}"]
-  end
-  subgraph graph [LangGraph]
-    P[prepare dataset]
-    E[EDA agent]
-    M[memory retrieve]
-    RF[model_rf]
-    XG[model_xgb]
-    LR[model_lr]
-    EV[evaluate]
-    D[debate]
-    J[judge]
-    P --> E --> M --> RF & XG & LR --> EV --> D --> J
-  end
-  A1 --> graph
-  A2 --> graph
-  api --> Chroma[(Chroma DB)]
-  graph --> Chroma
-  graph --> sklearn[XGBoost / sklearn]
-```
+Overview: **React UI** → **FastAPI** (`src/backend/app/main.py`) loads a compiled **LangGraph** graph from **`src/backend/app/graph/workflow.py`** and calls **`graph.invoke(...)`** (sync route uses a **worker thread** for the blocking invoke; async path uses the same).
 
+Graph state is **`DebateGraphState`** (`src/backend/app/state.py`): **reducers** merge dicts for parallel branches (`model_runs`, `model_proposals`, `metrics`) and **concatenate** `reasoning_logs`. After **`memory_retrieve`**, **`route_parallel_model_agents`** emits three **`Send("model_rf"|"model_xgb"|"model_lr", state)`** fan-outs. **Chroma** stores vectors; **LangChain `StructuredTool`** wraps real **sklearn / XGBoost** training. **Memory:** [below](#memory).
+
+![AutoML Arena architecture diagram — React UI, FastAPI, LangGraph, memory (Chroma), ML tools, and response flow](./docs/AutoMLArena_ArchiterctureDiagram.png)
 
 
 - **Synchronous run:** `POST /automl-debate` runs the full graph in a worker thread and returns a single JSON payload (good for scripts and the main UI).
@@ -56,7 +33,7 @@ State merges across parallel model nodes using **reducers** (e.g. `model_runs`, 
 
 ### Competing models (Random Forest, XGBoost, linear baseline)
 
-The graph runs **three model agents in parallel** (`model_rf`, `model_xgb`, `model_lr`). Each proposes hyperparameters (with optional memory context), then **trains and evaluates** on a holdout split. The **debate** and **judge** steps compare them using **real metrics**, not synthetic scores.
+The graph runs **three model agents in parallel** (`model_rf`, `model_xgb`, `model_lr`). Each **proposes hyperparameters with deterministic Python rules** from EDA (plus optional **memory** text from past runs)—**not** an LLM—then **trains and evaluates** on a holdout split. The **debate** and **judge** steps compare them using **real metrics**, not synthetic scores.
 
 
 | Model                            | Role                                                                                                                                                                                                                                                                                  |
@@ -70,13 +47,13 @@ Together, **two tree-based models** (RF + XGBoost) and **one linear model** cove
 
 ---
 
-## Tools (ML and infra)
+## Core Components
 
 
 | Area          | Technology                                                                                                                      |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | API           | FastAPI, Uvicorn, Pydantic                                                                                                      |
-| Orchestration | LangGraph, LangChain Core + **langchain-openai** (`ChatOpenAI` → OpenRouter for LLM nodes)                                      |
+| Orchestration | LangGraph; LangChain Core; optional **langchain-openai** `ChatOpenAI` (OpenRouter-compatible when `OPENROUTER_API_KEY` is set) |
 | ML            | scikit-learn, XGBoost, pandas, NumPy, joblib, PyArrow                                                                           |
 | Memory        | Chroma (persistent, under `src/backend/data/chroma/`); optional `pysqlite3-binary` + `sqlite_patch` if system SQLite is too old |
 | Frontend      | React 18, Vite 6, TypeScript, Tailwind CSS 3, Axios                                                                             |
@@ -86,28 +63,17 @@ Core training/evaluation logic lives in `src/backend/app/tools/ml_tools.py` (pre
 
 ---
 
-## Memory implementation
+## Memory
 
-All vector storage uses **Chroma** (`chromadb.PersistentClient`) with the **default embedding function**, under `**settings.chroma_dir`** (typically `src/backend/data/chroma/`).
+The app uses **two kinds of memory** so later steps are better informed.
 
-### 1. Run-scoped memory — `MemoryService` (`src/backend/app/services/memory_service.py`)
+**Short-term (this run only):** While your dataset is being processed, the system saves short notes from the EDA step and from the debate—always tied to **your current job**, so nothing from another user’s upload gets mixed in. That helps the debate step (and related logic) pull the right context for **this** CSV.
 
-- **Collection:** `automl_debate` (default).
-- **Writes:** short text documents with metadata (`run_id`, `agent`, `kind`).
-  - **EDA:** after the EDA subgraph merges JSON, a truncated structured report is indexed (`kind=eda_json`).
-  - **Debate:** the debate transcript (or transcript preview) is indexed (`kind=debate`).
-- **Reads:** `similarity_search_with_run(query, run_id, k)` runs a vector query then **filters hits to the current `run_id`** so retrieval stays on-topic for this execution.
-- **Used by:** debate node (retrieve snippets for the LLM narrative, when `OPENROUTER_API_KEY` is set).
+**Long-term (past runs):** After a run finishes successfully, the system remembers a **fingerprint** of the data (rough size, balance, task type, etc.) and **which model won** with what kind of scores. The **next** time you run a dataset that looks similar, it passes a **short text hint** to the three model trainers so their first-guess settings can lean on **what worked before**, not only the new file.
 
-### 2. Cross-run dataset pattern memory — `DatasetPatternMemory` (`src/backend/app/services/dataset_memory.py`)
+**How it fits together:** The pipeline runs in order—explore the data → look up similar past runs → train the three models → compare them → debate → judge. Everything travels in one shared **graph state** (including that hint text, metrics, debate output, and judge result).
 
-- **Collection:** `dataset_patterns` (separate from debate snippets).
-- **Query text:** `build_dataset_query_text(eda_structured, task_type)` — rows, features, missingness, target hint, class imbalance ratio, top correlation pair, etc., so embeddings align with stored run summaries.
-- **Retrieve:** `find_similar_dataset_patterns(..., k)` returns past runs whose embedded **dataset characterization + outcomes** are closest (with optional `exclude_run_id`).
-- **Inject:** `format_priors_for_model_agents` turns hits into a compact string → `**memory_context`** on graph state.
-- **Index after success:** `index_completed_run_from_state` (called from `main.py` when a sync or async run completes without error) stores **winner**, **judge confidence**, **holdout metrics**, and EDA-derived stats for future retrieval.
-
-Together: **pattern memory** biases **model proposals**; **run memory** enriches **debate** context for the same `run_id`.
+**Where it lives:** Vector storage uses **Chroma** on disk under `src/backend/data/chroma/` (separate from any optional cloud LLM). On older systems with a very old **SQLite**, the backend may need **`sqlite_patch.py`** so Chroma can start—see project notes.
 
 ---
 
@@ -134,7 +100,7 @@ Shared implementations: `**train_model`**, `**evaluate_model**`, bundle loading,
 | **prepare**                         | Builds dataset bundle: train/test paths, feature lists, task type (classification vs regression).                                                                                                                                                                                                                                                                                     |
 | **EDA**                             | LangGraph EDA subgraph: deterministic pandas profile + optional LLM JSON; output `eda_structured`.                                                                                                                                                                                                                                                                                    |
 | **memory_retrieve**                 | Queries Chroma for **similar past runs** (dataset fingerprint + outcomes); fills `memory_context` for proposals.                                                                                                                                                                                                                                                                      |
-| **model_rf / model_xgb / model_lr** | Proposal (EDA + memory) → `train_model` → `evaluate_model`; artifacts saved under the run directory.                                                                                                                                                                                                                                                                                  |
+| **model_rf / model_xgb / model_lr** | **Heuristic proposal** from EDA + `memory_context` (Python rules, not LLM) → `train_model` → `evaluate_model`; artifacts under the run directory.                                                                                                                                                                                                                                                                                  |
 | **evaluate**                        | Aggregates holdout metrics, builds **evaluation report** (normalized metrics, ranking score, train–test gap / overfitting signals).                                                                                                                                                                                                                                                   |
 | **debate**                          | Builds **debate analysis** (strengths/weaknesses per model from real metrics) and **debate transcript**; optional LLM layer acts as a **senior ML reviewer** (bullet points with cited metrics, overfitting / imbalance, comparative gaps).                                                                                                                                           |
 | **judge**                           | Chooses **winner**, **reason**, **confidence** (0–1) as a **senior ML architect**: **F1-first** (classification) or **R²/RMSE** (regression), explicit **generalization gap** in the rationale, precision–recall balance when available, and **lower confidence** when primary train–test gap **> 0.1**; optional LLM with the same rules, else `**build_judge_decision`** heuristic. |
@@ -152,7 +118,7 @@ All shell examples assume your current directory is the **clone root** (the fold
 
 - **Python** 3.11+ recommended (match your `venv` / CI).
 - **Node.js** 18+ for the frontend (Vite 6 expects Node ≥ 18).
-- Optional: **OpenRouter API key** for LLM-assisted EDA reasoning, debate narrative, and judge (OpenAI-compatible chat API). Set it in `**src/backend/.env`** or the process environment (see below). Without a key, heuristics still run.
+- Optional: **OpenRouter API key** in `**src/backend/.env`** (or environment) for optional LLM-assisted EDA, debate, and judge (`OPENROUTER_*` — see `.env.example`). **Without a key**, those steps use **heuristics / metric-only** paths; training and proposals still run.
 
 ### Backend
 
@@ -329,6 +295,8 @@ curl -s -X POST "http://127.0.0.1:8000/automl-debate" \
 AutoMLDebateSystem/
 ├── README.md
 ├── HOW_TO_RUN.md
+├── docs/
+│   └── AutoMLArena_ArchiterctureDiagram.png   # architecture diagram (see [Architecture](#architecture-high-level))
 ├── requirements.txt             # Python deps (backend)
 ├── tests/                       # sample CSVs + AboutDataset.md
 │   ├── AboutDataset.md
