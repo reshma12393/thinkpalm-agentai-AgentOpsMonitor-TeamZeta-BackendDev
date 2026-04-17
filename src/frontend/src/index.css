@@ -9,8 +9,5 @@
   body {
     @apply m-0 min-h-screen bg-slate-950 text-slate-100 antialiased;
     font-family: "DM Sans", system-ui, sans-serif;
-    background-image:
-      radial-gradient(1200px 600px at 20% -10%, rgb(30 58 138 / 0.35) 0%, transparent 55%),
-      radial-gradient(900px 500px at 90% 0%, rgb(88 28 135 / 0.25) 0%, transparent 50%);
   }
 }

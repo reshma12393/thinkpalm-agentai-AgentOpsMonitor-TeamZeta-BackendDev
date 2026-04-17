@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { AutomlDebateResponse } from "./api";
 import { healthCheck, postAutomlDebate, postCsvColumns } from "./api";
 import { FileUpload } from "./components/FileUpload";
+import { AiIcon } from "./components/AiIcon";
 import { ResultsDashboard } from "./components/ResultsDashboard";
 
 function guessDefaultTargetColumn(columns: string[]): string {
@@ -91,7 +92,10 @@ export function App() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 pb-20">
       <header className="mb-10">
-        <h1 className="text-3xl font-semibold tracking-tight text-white">AutoML Arena</h1>
+        <h1 className="flex flex-wrap items-center gap-3 text-3xl font-semibold tracking-tight text-white">
+          <AiIcon className="h-9 w-9 shrink-0 object-contain" />
+          AutoML Arena
+        </h1>
         <p className="mt-1 text-lg font-medium tracking-tight text-slate-300">
           A Multi-Agent Debate System for Model Selection
         </p>
@@ -102,7 +106,7 @@ export function App() {
         <p className="mt-4 max-w-2xl text-slate-400">
           Upload a CSV dataset, select the target column, and launch the pipeline:{" "}
           <strong>
-            Prepare → EDA → Memory Recall → Model Training (RF, XGBoost, Linear in parallel) → Evaluation → Debate → Judge
+            <br /> Prepare → EDA → Memory Recall → Model Training → Evaluation → Debate → Judge
           </strong>
           .
         </p>

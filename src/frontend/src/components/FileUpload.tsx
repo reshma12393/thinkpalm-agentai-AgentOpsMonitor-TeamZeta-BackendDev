@@ -1,3 +1,4 @@
+import { AndroidRobotIcon } from "./AndroidRobotIcon";
 import { Spinner } from "./Spinner";
 
 export type FileUploadProps = {
@@ -30,7 +31,7 @@ export function FileUpload({
   onFileChange,
   onTargetChange,
   onSubmit,
-  submitLabel = "Run AutoML Arena",
+  submitLabel = "Run",
   loadingLabel = "Running pipeline…",
 }: FileUploadProps) {
   const selectDisabled = loading || !file || targetOptionsLoading || targetOptions.length === 0;
@@ -98,7 +99,10 @@ export function FileUpload({
               {loadingLabel}
             </span>
           ) : (
-            submitLabel
+            <span className="flex items-center gap-2">
+              <AndroidRobotIcon className="h-5 w-5 shrink-0 text-white" />
+              {submitLabel}
+            </span>
           )}
         </button>
         {loading ? <span className="text-sm text-slate-500">This may take a minute while models train.</span> : null}
