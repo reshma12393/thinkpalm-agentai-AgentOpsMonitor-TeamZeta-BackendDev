@@ -24,6 +24,7 @@ from app.schemas import (
     JudgeDecision,
     ReasoningLogEntry,
 )
+from app.services.agent_trace import graph_state_to_agent_trace
 from app.services.dataset_memory import index_completed_run_from_state
 from app.services.run_store import graph_result_to_api, run_store
 from app.state import DebateGraphState
@@ -226,6 +227,8 @@ def _final_state_to_automl_response(final: dict[str, Any]) -> AutomlDebateRespon
             except Exception:
                 continue
 
+    agent_trace = graph_state_to_agent_trace(final)
+
     return AutomlDebateResponse(
         eda=eda,
         models=models,
@@ -236,6 +239,7 @@ def _final_state_to_automl_response(final: dict[str, Any]) -> AutomlDebateRespon
         judge_confidence=judge_confidence,
         metrics=metrics,
         reasoning_logs=reasoning_logs,
+        agent_trace=agent_trace,
     )
 
 

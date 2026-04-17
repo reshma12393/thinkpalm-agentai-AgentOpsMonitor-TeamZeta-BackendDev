@@ -32,6 +32,17 @@ from app.state import DebateGraphState
 
 MODEL_WORKER_NODES = ("model_rf", "model_xgb", "model_lr")
 
+# Ordered LangGraph nodes for UI (prepare → … → judge).
+PIPELINE_NODE_ORDER = (
+    "prepare",
+    "eda",
+    "memory_retrieve",
+    *MODEL_WORKER_NODES,
+    "evaluate",
+    "debate",
+    "judge",
+)
+
 
 def route_after_prepare(state: DebateGraphState) -> str:
     """Skip pipeline when dataset preparation failed."""

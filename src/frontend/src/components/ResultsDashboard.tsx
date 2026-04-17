@@ -1,7 +1,9 @@
 import type { AutomlDebateResponse } from "../api";
 import { edaQuickSummary } from "../lib/formatters";
 import { AgentReasoningTimeline } from "./AgentReasoningTimeline";
+import { AgentTracePanel } from "./AgentTracePanel";
 import { CollapsibleSection } from "./CollapsibleSection";
+import { JsonDownloadPanel } from "./JsonDownloadPanel";
 import { EdaSummaryTables } from "./EdaSummaryTables";
 import { ModelComparisonTable } from "./ModelComparisonTable";
 import { WinnerCard } from "./WinnerCard";
@@ -11,10 +13,12 @@ export type ResultsDashboardProps = {
 };
 
 /**
- * Composes collapsible sections + winner card + agent reasoning timeline.
+ * Composes collapsible sections + winner card + agent reasoning timeline + agent trace.
  */
 export function ResultsDashboard({ result }: ResultsDashboardProps) {
   const logs = result.reasoning_logs ?? [];
+  const trace = result.agent_trace ?? {};
+  const nodeCount = Array.isArray(trace.pipeline_nodes) ? trace.pipeline_nodes.length : 0;
   const conf = result.judge_confidence;
 
   return (
@@ -36,11 +40,12 @@ export function ResultsDashboard({ result }: ResultsDashboardProps) {
             defaultOpen={false}
             variant="muted"
           >
-            <div className="max-h-80 overflow-auto rounded-xl border border-slate-800/90 bg-slate-950/60 p-4">
-              <pre className="whitespace-pre-wrap break-words font-mono text-xs text-slate-400">
-                {JSON.stringify(result.eda, null, 2)}
-              </pre>
-            </div>
+            <JsonDownloadPanel
+              data={result.eda}
+              label="Full structured EDA (JSON)"
+              subtitle="Complete EDA payload"
+              fileName="eda_structured"
+            />
           </CollapsibleSection>
         </div>
       </CollapsibleSection>
@@ -73,6 +78,16 @@ export function ResultsDashboard({ result }: ResultsDashboardProps) {
         variant="muted"
       >
         <AgentReasoningTimeline logs={logs} />
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        title="Agent trace"
+        subtitle="LangGraph pipeline order and merged state (metrics, judge, memory, proposals)."
+        badge={nodeCount ? `${nodeCount} nodes` : "State"}
+        defaultOpen={false}
+        variant="muted"
+      >
+        <AgentTracePanel trace={trace} />
       </CollapsibleSection>
     </div>
   );

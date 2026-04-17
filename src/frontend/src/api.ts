@@ -51,6 +51,8 @@ export type AutomlDebateResponse = {
   judge_confidence?: number;
   metrics: Record<string, Record<string, number | string | unknown>>;
   reasoning_logs?: ReasoningLogEntry[];
+  /** LangGraph pipeline state snapshot (node order, metrics, judge, memory, …). */
+  agent_trace?: Record<string, unknown>;
 };
 
 export type CsvColumnsResponse = {

@@ -35,8 +35,11 @@ export function WinnerCard({
       ) : null}
       <p className="mt-3 text-sm text-slate-400">{subtitle}</p>
       {judgeReason ? (
-        <div className="mt-4 rounded-xl border border-emerald-800/50 bg-slate-950/50 p-3 text-sm leading-relaxed text-slate-300">
-          {judgeReason}
+        <div className="mt-4">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-emerald-300/90">Reasoning</h3>
+          <div className="mt-1.5 rounded-xl border border-emerald-800/50 bg-slate-950/50 p-3 text-sm leading-relaxed text-slate-300">
+            {judgeReason}
+          </div>
         </div>
       ) : null}
     </section>

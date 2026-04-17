@@ -84,3 +84,7 @@ class AutomlDebateResponse(BaseModel):
         default_factory=list,
         description="Ordered agent reasoning steps for timeline UI.",
     )
+    agent_trace: dict[str, Any] = Field(
+        default_factory=dict,
+        description="LangGraph pipeline state snapshot (nodes, metrics, judge, memory, …) for Agent trace UI.",
+    )
