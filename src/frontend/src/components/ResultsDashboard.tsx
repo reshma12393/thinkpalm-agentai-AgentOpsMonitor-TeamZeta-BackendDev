@@ -2,6 +2,7 @@ import type { AutomlDebateResponse } from "../api";
 import { edaQuickSummary } from "../lib/formatters";
 import { AgentReasoningTimeline } from "./AgentReasoningTimeline";
 import { CollapsibleSection } from "./CollapsibleSection";
+import { EdaSummaryTables } from "./EdaSummaryTables";
 import { ModelComparisonTable } from "./ModelComparisonTable";
 import { WinnerCard } from "./WinnerCard";
 
@@ -25,11 +26,22 @@ export function ResultsDashboard({ result }: ResultsDashboardProps) {
         judgeConfidence={typeof conf === "number" ? conf : undefined}
       />
 
-      <CollapsibleSection title="EDA summary" subtitle={edaQuickSummary(result.eda)} badge="Structured" defaultOpen>
-        <div className="max-h-80 overflow-auto rounded-xl border border-slate-800 bg-slate-950/50 p-4">
-          <pre className="whitespace-pre-wrap break-words font-mono text-xs text-slate-400">
-            {JSON.stringify(result.eda, null, 2)}
-          </pre>
+      <CollapsibleSection title="EDA" subtitle={edaQuickSummary(result.eda)} badge="Tables" defaultOpen>
+        <div className="space-y-4">
+          <EdaSummaryTables eda={result.eda} />
+          <CollapsibleSection
+            title="Full structured EDA (JSON)"
+            subtitle="Complete payload — debugging, copy/export."
+            badge="Raw"
+            defaultOpen={false}
+            variant="muted"
+          >
+            <div className="max-h-80 overflow-auto rounded-xl border border-slate-800/90 bg-slate-950/60 p-4">
+              <pre className="whitespace-pre-wrap break-words font-mono text-xs text-slate-400">
+                {JSON.stringify(result.eda, null, 2)}
+              </pre>
+            </div>
+          </CollapsibleSection>
         </div>
       </CollapsibleSection>
 

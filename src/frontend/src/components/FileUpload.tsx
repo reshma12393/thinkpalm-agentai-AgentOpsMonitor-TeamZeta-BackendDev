@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { AndroidRobotIcon } from "./AndroidRobotIcon";
 import { Spinner } from "./Spinner";
 
@@ -34,6 +35,7 @@ export function FileUpload({
   submitLabel = "Run",
   loadingLabel = "Running pipeline…",
 }: FileUploadProps) {
+  const [targetHintOpen, setTargetHintOpen] = useState(false);
   const selectDisabled = loading || !file || targetOptionsLoading || targetOptions.length === 0;
   const selectId = "target-column-select";
 
@@ -52,9 +54,39 @@ export function FileUpload({
           />
         </label>
         <div className="grid gap-2 text-sm text-slate-400">
-          <label htmlFor={selectId}>Target column</label>
+          <div className="flex flex-wrap items-center gap-2">
+            <label htmlFor={selectId} className="text-slate-400">
+              Target column
+            </label>
+            <button
+              type="button"
+              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-600 bg-slate-800/90 text-amber-400/95 transition hover:border-amber-500/45 hover:bg-amber-500/10 hover:text-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500/35"
+              onClick={() => setTargetHintOpen((v) => !v)}
+              aria-expanded={targetHintOpen}
+              aria-controls="target-column-hint"
+              aria-label={targetHintOpen ? "Hide target column warning" : "Show target column warning"}
+              title="Target column: click to show or hide the warning"
+            >
+              <WarningTriangleIcon className="h-4 w-4" aria-hidden />
+            </button>
+          </div>
+          <p
+            id="target-column-hint"
+            className={
+              targetHintOpen
+                ? "flex gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-2 text-xs leading-snug text-amber-100/95"
+                : "hidden"
+            }
+            role="region"
+          >
+            <span className="select-none" aria-hidden>
+              ⚠️
+            </span>
+            <span>Select the correct target column—this is the variable the model will try to predict.</span>
+          </p>
           <select
             id={selectId}
+            aria-describedby={targetHintOpen ? "target-column-hint" : undefined}
             value={targetOptions.includes(targetColumn) ? targetColumn : ""}
             disabled={selectDisabled}
             onChange={(e) => onTargetChange(e.target.value)}
@@ -122,5 +154,25 @@ export function FileUpload({
         </div>
       ) : null}
     </section>
+  );
+}
+
+function WarningTriangleIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      stroke="currentColor"
+      strokeWidth={2}
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+      />
+    </svg>
   );
 }
