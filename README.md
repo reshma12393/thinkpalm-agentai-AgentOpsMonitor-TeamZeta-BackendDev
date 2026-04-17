@@ -185,7 +185,7 @@ Use `**src/frontend/**` only — there is **no** app under a top-level `frontend
 6. Click **Run AutoML Arena** and wait until training and the debate/judge steps finish (runtime depends on dataset size and CPU).
 7. Review **metrics**, **debate**, and **judge** output on the page. If a banner says the backend is unreachable, confirm `**curl http://127.0.0.1:8000/health`** returns `{"status":"ok"}` and that nothing else is using port **8000**.
 
-Sample CSVs for trying the UI live under `**tests/`** (see **Sample datasets** under [Input and output samples](#input-and-output-samples) and `[tests/AboutDataset.md](./tests/AboutDataset.md)`).
+Sample CSVs for trying the UI live under **`tests/`** — see **[tests/AboutDataset.md](./tests/AboutDataset.md)** for filenames, target columns, and provenance.
 
 **Production build** (static assets for deployment):
 
@@ -196,96 +196,6 @@ npm run preview   # optional local test of dist/
 ```
 
 Serve `src/frontend/dist/` behind a static host and reverse-proxy `/automl-debate`, `/api`, and `/health` to your FastAPI process, or point the client’s API base URL at the backend.
-
----
-
-## Input and output samples
-
-### Sample datasets (debate / pipeline testing)
-
-The `**tests/**` directory at the repository root contains **two sample CSV files** you can upload in the UI or pass to `**POST /automl-debate`** / `**POST /api/v1/debate**` to exercise the full pipeline (EDA, models, evaluation, **debate**, judge). Full write-up (quick reference, sources, key facts, licenses, usage): **[`tests/AboutDataset.md`](./tests/AboutDataset.md)**.
-
-
-| File                             | Typical `target_column`                                                                                             |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `tests/Adult_income_dataset.csv` | `income` (1994 Census / UCI benchmark; `<=50K` / `>50K` — see `[tests/AboutDataset.md](./tests/AboutDataset.md)`) |
-| `tests/Telco-Customer-Churn.csv` | `Churn` (IBM sample churn data; Yes/No — see `[tests/AboutDataset.md](./tests/AboutDataset.md)`)                  |
-
-
-Paths are relative to the clone root, e.g. `-F "file=@tests/Telco-Customer-Churn.csv"` when running `curl` from that directory. For **Adult Income** (UCI / Census) and **IBM Telco churn** provenance, counts, and licenses, see `**tests/AboutDataset.md`**.
-
-### Input (both main API styles)
-
-- **CSV file** (tabular data).
-- **Target column** name (form field `target_column`): the label column for classification or regression.
-
-Example CSV snippet (`iris`-style):
-
-```csv
-sepal_length,sepal_width,petal_length,petal_width,species
-5.1,3.5,1.4,0.2,setosa
-```
-
-Target column: `species`.
-
-### Output: `POST /automl-debate` (synchronous)
-
-**Request:** `multipart/form-data` with `file` (CSV) and `target_column` (string).
-
-**Response (shape):** JSON object including:
-
-- `eda` — Structured EDA (e.g. `deterministic` block with row counts, imbalance, correlations).
-- `models` — Array of per-model rows (`model_key`, `model_type`, `metrics`, `proposal`, …).
-- `metrics` — Holdout metrics keyed by `rf` / `xgb` / `lr`.
-- `debate` — Full debate transcript string.
-- `winner` — Model key chosen by the judge (e.g. `"rf"`).
-- `winner_agent`, `judge_reason`, `judge_confidence` — Judge details.
-- `reasoning_logs` — Ordered `{ agent, step, content, metadata }[]` for UI timelines.
-
-**Example (truncated):**
-
-```json
-{
-  "winner": "rf",
-  "winner_agent": "model_agent_random_forest",
-  "judge_reason": "Winner rf: holdout f1_macro=0.97; generalization overfitting_gap_magnitude=0.02 ...",
-  "judge_confidence": 0.95,
-  "metrics": {
-    "rf": { "f1_macro": 0.9666, "accuracy": 0.9666 },
-    "xgb": { "f1_macro": 0.9333, "accuracy": 0.9333 },
-    "lr": { "f1_macro": 0.9333, "accuracy": 0.9333 }
-  },
-  "models": [ ... ],
-  "eda": { "schema_version": "1.0", "deterministic": { ... } },
-  "debate": "## Debate agent — metric-grounded comparison\n...",
-  "reasoning_logs": [
-    { "agent": "eda_agent", "step": "eda_langgraph", "content": "...", "metadata": {} }
-  ]
-}
-```
-
-### Output: `POST /api/v1/debate` (async + poll)
-
-**Immediate response:**
-
-```json
-{
-  "run_id": "550e8400-e29b-41d4-a716-446655440000",
-  "status": "queued",
-  "message": null,
-  "result": null
-}
-```
-
-Poll `GET /api/v1/debate/{run_id}` until `status` is `completed` or `failed`. On success, `result` contains `DebateRunResult` (metrics, `evaluation_report`, `debate_analysis`, `judge`, `reasoning_logs`, etc.).
-
-**curl (sync):**
-
-```bash
-curl -s -X POST "http://127.0.0.1:8000/automl-debate" \
-  -F "file=@/path/to/data.csv" \
-  -F "target_column=species" | jq '.winner, .metrics'
-```
 
 ---
 
