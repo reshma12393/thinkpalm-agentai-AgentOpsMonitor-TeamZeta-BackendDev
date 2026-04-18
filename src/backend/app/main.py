@@ -18,6 +18,8 @@ from app.graph.workflow import build_debate_graph
 from app.config import settings
 from app.schemas import (
     AutomlDebateResponse,
+    ChatRequest,
+    ChatResponse,
     CsvColumnsResponse,
     DebateRunResult,
     DebateRunStatus,
@@ -25,6 +27,7 @@ from app.schemas import (
     ReasoningLogEntry,
 )
 from app.services.agent_trace import graph_state_to_agent_trace
+from app.services.chat_assistant import answer_chat
 from app.services.dataset_memory import index_completed_run_from_state
 from app.services.run_store import graph_result_to_api, run_store
 from app.state import DebateGraphState
@@ -109,6 +112,26 @@ async def get_debate(run_id: str) -> DebateRunStatus:
 @app.get("/health")
 async def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.post("/api/v1/chat", response_model=ChatResponse)
+async def chat(req: ChatRequest) -> ChatResponse:
+    """
+    ML advisor chat: answers general algorithm/dataset questions and questions about the active run
+    (using the optional ``run_context`` snapshot).
+    """
+    if not req.messages:
+        raise HTTPException(status_code=400, detail="messages[] must include at least one user message.")
+    try:
+        raw = await asyncio.to_thread(
+            answer_chat,
+            [m.model_dump() for m in req.messages],
+            req.run_context,
+        )
+    except Exception as e:
+        logger.exception("chat assistant failed")
+        raise HTTPException(status_code=500, detail=f"Chat failed: {e!s}") from e
+    return ChatResponse(reply=str(raw.get("reply", "")), model=str(raw.get("model", "")))
 
 
 _MAX_CSV_HEADER_SCAN_BYTES = 2 * 1024 * 1024

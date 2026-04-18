@@ -6,6 +6,7 @@ import type { AutomlDebateResponse } from "./api";
 import { healthCheck, postAutomlDebate, postCsvColumns } from "./api";
 import { FileUpload } from "./components/FileUpload";
 import { AiIcon } from "./components/AiIcon";
+import { ChatAssistant } from "./components/ChatAssistant";
 import { ResultsDashboard } from "./components/ResultsDashboard";
 
 function guessDefaultTargetColumn(columns: string[]): string {
@@ -132,6 +133,8 @@ export function App() {
       />
 
       {result ? <ResultsDashboard result={result} /> : null}
+
+      <ChatAssistant result={result} />
     </div>
   );
 }

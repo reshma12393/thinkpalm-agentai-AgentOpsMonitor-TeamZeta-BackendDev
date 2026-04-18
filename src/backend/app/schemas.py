@@ -58,6 +58,27 @@ class DebateRunResult(BaseModel):
     error: str | None = None
 
 
+class ChatMessage(BaseModel):
+    role: str = Field(description="One of: user, assistant, system.")
+    content: str = Field(description="Message body (markdown allowed).")
+
+
+class ChatRequest(BaseModel):
+    messages: list[ChatMessage] = Field(
+        default_factory=list,
+        description="Ordered chat history; the final message should be the latest user turn.",
+    )
+    run_context: dict[str, Any] | None = Field(
+        default=None,
+        description="Optional snapshot of the current AutoML run (eda, models, metrics, judge_reason, debate, …).",
+    )
+
+
+class ChatResponse(BaseModel):
+    reply: str
+    model: str = Field(default="", description="Identifier of the LLM that produced the reply.")
+
+
 class DebateRunStatus(BaseModel):
     run_id: str
     status: str

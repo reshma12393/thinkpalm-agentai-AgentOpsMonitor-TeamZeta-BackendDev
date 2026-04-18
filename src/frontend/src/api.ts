@@ -83,6 +83,31 @@ export async function postAutomlDebate(file: File, targetColumn: string): Promis
   }
 }
 
+export type ChatMessage = {
+  role: "user" | "assistant" | "system";
+  content: string;
+};
+
+export type ChatResponse = {
+  reply: string;
+  model: string;
+};
+
+export async function postChat(
+  messages: ChatMessage[],
+  runContext: Record<string, unknown> | null,
+): Promise<ChatResponse> {
+  try {
+    const { data } = await client.post<ChatResponse>("/api/v1/chat", {
+      messages,
+      run_context: runContext,
+    });
+    return data;
+  } catch (e) {
+    throw new Error(formatAxiosError(e));
+  }
+}
+
 export async function healthCheck(): Promise<boolean> {
   try {
     const { data } = await client.get<{ status?: string }>("/health");
