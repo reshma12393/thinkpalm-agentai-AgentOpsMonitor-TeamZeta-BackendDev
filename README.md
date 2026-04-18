@@ -57,12 +57,21 @@ Together, **two tree-based models** (RF + XGBoost) and **one linear model** cove
 | ML            | scikit-learn, XGBoost, pandas, NumPy, joblib, PyArrow                                                                           |
 | Memory        | Chroma (persistent, under `src/backend/data/chroma/`); optional `pysqlite3-binary` + `sqlite_patch` if system SQLite is too old |
 | Frontend      | React 18, Vite 6, TypeScript, Tailwind CSS 3, Axios                                                                             |
+| Chatbot Element  | Chatbot with LLM support                                                                              |
 
 
 Core training/evaluation logic lives in `src/backend/app/tools/ml_tools.py` (preprocessing, `train_model`, `evaluate_model`, artifact paths, `build_training_toolkit`).
 
 ---
+## Input and Output
 
+**Input:** a tabular CSV plus the target column name (classification or regression), via the UI /API 
+
+**Output:** a JSON payload with EDA, three trained models + holdout metrics, a debate transcript, a judge decision (winner, reason, confidence), and the agent trace / reasoning logs — all shown in the UI. 
+
+**Artifacts:** Trained model files saved under src/backend/data/runs/, and the run is indexed into Chroma memory for future similar-dataset lookups. 
+
+---
 ## Memory
 
 The app uses **two kinds of memory** so later steps are better informed.
@@ -107,6 +116,12 @@ Shared implementations: `**train_model`**, `**evaluate_model**`, bundle loading,
 
 
 After a successful run (sync or async completion path), the backend **indexes** the outcome into `**dataset_patterns`** for future `**memory_retrieve**` steps.
+
+---
+
+## ML Advisor chatbot
+
+AutoML Arena ships with a **floating ML Advisor chatbot** (bottom-right of the UI) backed by the `POST /api/v1/chat` endpoint in `src/backend/app/services/chat_assistant.py`. It answers two kinds of questions: **general ML guidance** (e.g. *which algorithm fits a small, imbalanced, tabular dataset?* — Random Forest vs XGBoost vs linear trade-offs, evaluation, overfitting, imbalance) and **questions about the active run**, because the browser automatically attaches a compact `run_context` (EDA, metrics, debate excerpt, judge reasoning) to each message. Replies are constrained to a **summary style of at most 4 sentences**, enforced by the system prompt and a server-side sentence clamp so outputs stay tight and cite real numbers from `run_context` rather than invented ones. The advisor reuses the same OpenRouter model as the other agents via `get_chat_model()`; if `OPENROUTER_API_KEY` is not set, it returns a short “not configured” message instead of failing, and the rest of the app works unchanged. Chat history persists in `localStorage` only (no server storage), and the panel header shows whether the advisor is *Connected to this run* or in *General guidance* mode.
 
 ---
 
