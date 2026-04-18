@@ -125,6 +125,54 @@ AutoML Arena ships with a **floating ML Advisor chatbot** (bottom-right of the U
 
 ---
 
+## Team Responsibilities
+
+| Area / Component | Reshma | Ardra |
+| --- | --- | --- |
+| Problem Identification | ✓ | ✓ |
+| System Design Discussion | ✓ | ✓ |
+| Documentation & demo | ✓ | ✓ |
+| Core ownership | Agent orchestration | Frontend development |
+| Feature area | Chatbot response logic | Evaluation optimization |
+| Feature area | API + memory handling | Debate / Judge tuning |
+| Feature area | System flow design | Chatbot UI |
+
+---
+
+## Screenshots
+
+UI walkthrough of a complete run.
+
+### Landing Page & Dataset Upload
+![Landing page with dataset upload and target-column picker](./screenshots/DataSetUpload.png)
+
+### Winner Card (Judge Decision + Reasoning)
+![Winner card showing selected model, confidence, and reasoning](./screenshots/AutoMLArena_WinnerCard.png)
+
+### EDA Summary Tables
+![EDA overview, target profile, class imbalance, and feature-feature correlations](./screenshots/AutoMLArena_EDA_Results.png)
+
+![EDA Dataset Overview](./screenshots/AutoMLArena_EDA_DatasetOverview.png)
+
+### Model Comparison Table
+![Model comparison with per-metric best-value highlighting and Download JSON](./screenshots/AutoMLArena_ModelComparison_Results.png)
+
+### Debate Summary
+![Debate transcript grouped per model with metric-grounded strengths and weaknesses](./screenshots/AutoMLArena_DebateSummary.png)
+
+### Agent Reasoning Timeline
+![Agent reasoning timeline grouped by agent with expandable logs](./screenshots/AutoMLArena_AgentPipelineFlow.png)
+
+### Agent Trace 
+![Agent trace pipeline graph and Graph-state JSON (View / Download / Copy)](./screenshots/AutoMLArena_AgentTraceGraph.png)
+
+### ML Advisor Chatbot
+![Floating ML Advisor chatbot for general ML guidance queries](./screenshots/AutoMLArena_MLAdvisorGeneral.png)
+
+![Floating ML Advisor chatbot connected to the current run](./screenshots/AutoMLArena_MLAdvisorRunConnected.png)
+
+---
+
 ## Setup
 
 All shell examples assume your current directory is the **clone root** (the folder that contains `src/`, `README.md`, and `requirements.txt`).
