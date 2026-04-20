@@ -173,7 +173,11 @@ UI walkthrough of a complete run.
 
 ---
 
-## Setup
+## Setup 
+ 
+> **INFO:** Setup Instructions for both Backend and Frontend 
+> Instructions for How to Run the Application Locally (Detailed steps with commands and troubleshooting) are available in **[HOW_TO_RUN.md](./HOW_TO_RUN.md)**.
+
 
 All shell examples assume your current directory is the **clone root** (the folder that contains `src/`, `README.md`, and `requirements.txt`).
 
@@ -212,7 +216,7 @@ If OpenRouter returns **404 / “No endpoints found”** for a model, that id is
 
 **402 / credits:** the app sets `**OPENROUTER_MAX_OUTPUT_TOKENS`** (default `2048`) so requests do not reserve the provider’s full output budget (e.g. 64k). Lower it further or reduce `**OPENROUTER_MAX_LLM_INPUT_CHARS**` if prompts are still too expensive; add credits at [openrouter.ai/settings/credits](https://openrouter.ai/settings/credits).
 
-Run the API:
+**How to Run the Backend API:**
 
 ```bash
 cd src/backend
@@ -227,6 +231,8 @@ Health check: `GET http://127.0.0.1:8000/health` → `{"status":"ok"}`.
 ### Frontend (web UI)
 
 **Prerequisites:** **Node.js 18+** (Vite 6). From the **repository root**:
+
+**How to Run the Frontend UI:**
 
 ```bash
 cd src/frontend
