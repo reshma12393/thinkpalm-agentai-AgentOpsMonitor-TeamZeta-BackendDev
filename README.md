@@ -63,6 +63,41 @@ Together, **two tree-based models** (RF + XGBoost) and **one linear model** cove
 Core training/evaluation logic lives in `src/backend/app/tools/ml_tools.py` (preprocessing, `train_model`, `evaluate_model`, artifact paths, `build_training_toolkit`).
 
 ---
+
+## Tech Stack with Versions
+
+### Backend (Python)
+
+| Component | Technology | Version |
+| --- | --- | --- |
+| **API Framework** | FastAPI | ≥ 0.115.0 |
+| **Server** | Uvicorn | ≥ 0.32.0 |
+| **Orchestration** | LangGraph | ≥ 0.2.50 |
+| **LLM Framework** | LangChain Core | ≥ 0.3.20 |
+| **LLM Integration** | LangChain OpenAI | ≥ 0.3.0 |
+| **Data Processing** | pandas | ≥ 2.2.0 |
+| **ML - Tree Ensemble** | scikit-learn | ≥ 1.5.0 |
+| **ML - Boosting** | XGBoost | ≥ 2.1.0 |
+| **Vector Database** | Chroma | ≥ 0.5.0 |
+
+**Python Version:** ≥ 3.11
+
+### Frontend (Node.js)
+
+| Component | Technology | Version |
+| --- | --- | --- |
+| **UI Framework** | React | 18.3.1 |
+| **DOM Library** | React DOM | 18.3.1 |
+| **Build Tool** | Vite | 6.4.2 |
+| **Language** | TypeScript | 5.6.3 |
+| **Styling** | Tailwind CSS | 3.4.17 |
+| **CSS Processing** | PostCSS | 8.5.10 |
+| **Vendor Prefixes** | Autoprefixer | 10.5.0 |
+| **HTTP Client** | Axios | 1.15.0 |
+
+**Node.js Version:** ≥ 18.0.0
+
+---
 ## Input and Output
 
 **Input:** a tabular CSV plus the target column name (classification or regression), via the UI /API 
@@ -170,6 +205,17 @@ UI walkthrough of a complete run.
 ![Floating ML Advisor chatbot for general ML guidance queries](./screenshots/AutoMLArena_MLAdvisorGeneral.png)
 
 ![Floating ML Advisor chatbot connected to the current run](./screenshots/AutoMLArena_MLAdvisorRunConnected.png)
+
+---
+
+## Demo
+
+Watch the **AutoML Arena** in action! See how the multi-agent debate system evaluates three competing models on tabular datasets, with transparent reasoning and judge decisions -- —along with a breakdown of team responsibilities.
+
+[![AutoML Arena Demo](https://img.youtube.com/vi/mHH2y8y-fFM/mqdefault.jpg)](https://youtu.be/mHH2y8y-fFM)
+
+**Demo Video:** [
+AutoML Arena – Multi-Agent AutoML Debate System (Demo)](https://youtu.be/mHH2y8y-fFM)
 
 ---
 
